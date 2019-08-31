@@ -1,0 +1,44 @@
+---
+title: "Using Predictive Algorithms to Evaluate Human Exercise Quality"
+author: "Ryan Hammer"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, results = "hold")
+```
+```{r load required packages}
+library(ggplot2)
+library(tidyverse)
+library(caret)
+
+```
+
+## Introduction
+
+The purpose of this analysis was to create a predictive model for evaluating the quality of exercise done by a person wearing a fitness based tracking device. The data had been split into a training set and a test set; links to each are given below:
+
+Training: https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv
+Test: https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
+
+The original data source is: http://groupware.les.inf.puc-rio.br/har
+
+## Data Summary
+```{r load dataset, echo=FALSE, results='hold'}
+url1 <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
+url2 <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"
+download.file(url1, "Training_Data.csv")
+download.file(url2, "Testing_Data.csv")
+train <- read.csv("Training_Data.csv") %>% tbl_df()
+test <- read.csv("Testing_Data.csv") %>% tbl_df()
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
