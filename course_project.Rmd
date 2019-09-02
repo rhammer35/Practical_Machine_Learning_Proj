@@ -24,15 +24,33 @@ Test: https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
 The original data source is: http://groupware.les.inf.puc-rio.br/har
 
 ## Data Summary
-```{r load dataset, echo=FALSE, results='hold'}
+The code below loads the data into R and checks the dimensions of each set.
+```{r load dataset}
 url1 <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
 url2 <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"
 download.file(url1, "Training_Data.csv")
 download.file(url2, "Testing_Data.csv")
 train <- read.csv("Training_Data.csv") %>% tbl_df()
 test <- read.csv("Testing_Data.csv") %>% tbl_df()
+dim(train)
+dim(test)
 ```
-
+Each data set contains 160 variables; however the test set contains only 20 observations and the train set contains over 19000. A quick review of train and test revealed that there were columns containing blank or NA values. Some of those are displayed below.
+```{r na in data set}
+head(train[,14:19], 5)
+```
+To learn more about how many values were missing or NA in any particular variable column, the following code was applied. It first replaces blank values with NAs, then counts the NAs in any given column.
+```{r sum nas}
+train <- train %>% mutate_all(na_if,"")
+nacount <- train %>% apply(2, is.na) %>% apply(2, sum)
+unique(nacount)
+```
+This revealed that variables in the data set either contained 0 or over 19000 NAs. In order to generate a successful predictive model, variables containing the NA values were removed.
+```{r remove na variables}
+train <- train %>% select_if(~ !any(is.na(.)))
+dim(train)
+```
+The data set now contains 60 variables and no missing or NA values.
 ## Including Plots
 
 You can also embed plots, for example:
