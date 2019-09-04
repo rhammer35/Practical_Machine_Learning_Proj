@@ -16,7 +16,6 @@ set.seed(353535)
 ```
 
 ## Introduction
-
 The purpose of this analysis was to create a predictive model for evaluating the quality of exercise done by a person wearing a fitness based tracking device. The data had been split into a training set and a test set; links to each are given below:
 
 [Training](https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv)  
@@ -24,7 +23,7 @@ The purpose of this analysis was to create a predictive model for evaluating the
 
 The original data source is [here](http://groupware.les.inf.puc-rio.br/har).
 
-The train set contains a variable called "classe" that was be used as a descriptor for how well the exercise was performed. That is the variable the prediction model will be based on, and that is what will be predicted for the test data.
+The train set contained a variable called "classe" that could be used as a descriptor of how well the exercise was performed. The prediction model was created using values for that variable in the training data and subsequently used to predict values for that variable in the test data.
 
 ## Data Summary
 The code below loads the data into R and checks the dimensions of each set.
@@ -38,7 +37,7 @@ testing <- read.csv("Testing_Data.csv") %>% tbl_df()
 dim(training)
 dim(testing)
 ```
-Each data set contains 160 variables; however the test set contains only 20 observations and the train set contains over 19000. A quick review of train and test revealed that there were columns containing blank or NA values. Some of those are displayed below.
+Each data set contains 160 variables; however the test set contains only 20 observations and the train set contains over 19,000. A quick review of train and test revealed that there were columns containing blank or NA values. Some of those are displayed below.
 ```{r na in data set}
 head(training[,16:19], 5)
 ```
@@ -48,7 +47,7 @@ training <- training %>% mutate_all(na_if,"")
 nacount <- training %>% apply(2, is.na) %>% apply(2, sum)
 unique(nacount)
 ```
-This revealed that variables in the data set either contained 0 or over 19000 NAs. In order to generate a successful predictive model, variables containing the NA values were removed.
+This revealed that variables in the data set either contained 0 NAs, or one for nearly every observation in the data set. In order to generate a successful predictive model, those variables containing NA values were removed.
 ```{r remove na variables}
 training <- training %>% select_if(~ !any(is.na(.)))
 dim(training)
@@ -74,6 +73,7 @@ fit <- train(classe ~., method="rf", preProcess = "pca", data = trainset,
 stopCluster(cluster)
 registerDoSEQ()
 ```
+
 ## Results
 The resulting model's characteristics are given below:
 ```{r display model, echo=FALSE}

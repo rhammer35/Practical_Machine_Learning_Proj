@@ -375,7 +375,7 @@ summary {
 <p><a href="https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv">Training</a><br />
 <a href="https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv">Test</a></p>
 <p>The original data source is <a href="http://groupware.les.inf.puc-rio.br/har">here</a>.</p>
-<p>The train set contains a variable called “classe” that was be used as a descriptor for how well the exercise was performed. That is the variable the prediction model will be based on, and that is what will be predicted for the test data.</p>
+<p>The train set contained a variable called “classe” that could be used as a descriptor of how well the exercise was performed. The prediction model was created using values for that variable in the training data and subsequently used to predict values for that variable in the test data.</p>
 </div>
 <div id="data-summary" class="section level2">
 <h2>Data Summary</h2>
@@ -390,7 +390,7 @@ dim(training)
 dim(testing)</code></pre>
 <pre><code>[1] 19622   160
 [1]  20 160</code></pre>
-<p>Each data set contains 160 variables; however the test set contains only 20 observations and the train set contains over 19000. A quick review of train and test revealed that there were columns containing blank or NA values. Some of those are displayed below.</p>
+<p>Each data set contains 160 variables; however the test set contains only 20 observations and the train set contains over 19,000. A quick review of train and test revealed that there were columns containing blank or NA values. Some of those are displayed below.</p>
 <pre class="r"><code>head(training[,16:19], 5)</code></pre>
 <pre><code># A tibble: 5 x 4
   skewness_roll_belt.1 skewness_yaw_belt max_roll_belt max_picth_belt
@@ -405,7 +405,7 @@ dim(testing)</code></pre>
 nacount &lt;- training %&gt;% apply(2, is.na) %&gt;% apply(2, sum)
 unique(nacount)</code></pre>
 <pre><code>[1]     0 19216</code></pre>
-<p>This revealed that variables in the data set either contained 0 or over 19000 NAs. In order to generate a successful predictive model, variables containing the NA values were removed.</p>
+<p>This revealed that variables in the data set either contained 0 NAs, or one for nearly every observation in the data set. In order to generate a successful predictive model, those variables containing NA values were removed.</p>
 <pre class="r"><code>training &lt;- training %&gt;% select_if(~ !any(is.na(.)))
 dim(training)</code></pre>
 <pre><code>[1] 19622    60</code></pre>
