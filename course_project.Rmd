@@ -5,40 +5,91 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, results = "hold")
+knitr::opts_chunk$set(echo = TRUE, results = "hold", comment = "")
 ```
-```{r load required packages}
+```{r load required packages, echo=FALSE, message=FALSE}
 library(ggplot2)
 library(tidyverse)
 library(caret)
-
+library(e1071)
+set.seed(353535)
 ```
 
 ## Introduction
 
 The purpose of this analysis was to create a predictive model for evaluating the quality of exercise done by a person wearing a fitness based tracking device. The data had been split into a training set and a test set; links to each are given below:
 
-Training: https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv
-Test: https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
+[Training](https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv)  
+[Test](https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv)  
 
-The original data source is: http://groupware.les.inf.puc-rio.br/har
+The original data source is [here](http://groupware.les.inf.puc-rio.br/har).
+
+The train set contains a variable called "classe" that was be used as a descriptor for how well the exercise was performed. That is the variable the prediction model will be based on, and that is what will be predicted for the test data.
 
 ## Data Summary
-```{r load dataset, echo=FALSE, results='hold'}
+The code below loads the data into R and checks the dimensions of each set.
+```{r load dataset}
 url1 <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
 url2 <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"
 download.file(url1, "Training_Data.csv")
 download.file(url2, "Testing_Data.csv")
-train <- read.csv("Training_Data.csv") %>% tbl_df()
-test <- read.csv("Testing_Data.csv") %>% tbl_df()
+training <- read.csv("Training_Data.csv") %>% tbl_df()
+testing <- read.csv("Testing_Data.csv") %>% tbl_df()
+dim(training)
+dim(testing)
 ```
-
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
+Each data set contains 160 variables; however the test set contains only 20 observations and the train set contains over 19000. A quick review of train and test revealed that there were columns containing blank or NA values. Some of those are displayed below.
+```{r na in data set}
+head(training[,16:19], 5)
 ```
+To learn more about how many values were missing or NA in any particular variable column, the following code was applied. It first replaces blank values with NAs, then counts the NAs in any given column.
+```{r sum nas}
+training <- training %>% mutate_all(na_if,"")
+nacount <- training %>% apply(2, is.na) %>% apply(2, sum)
+unique(nacount)
+```
+This revealed that variables in the data set either contained 0 or over 19000 NAs. In order to generate a successful predictive model, variables containing the NA values were removed.
+```{r remove na variables}
+training <- training %>% select_if(~ !any(is.na(.)))
+dim(training)
+```
+The data set now contained 60 variables and no missing or NA values.
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+## Model Selection
+One of the most accurate type of prediction models per the description in the lecture videos and course notes is the random forest model. From the lecture:  
+"The pros for this approach are that it's qute accurate. And along with boosting, it's one of the most widely used and highly accurate methods for prediction in competitions like Kaggle. The cons are that it can be quite slow, it has to build a large number of trees, and it can be hard to interpret, in the sense that you might have a large number of trees that are averaged together."  
+Len Greski's Github post [here](https://github.com/lgreski/datasciencectacontent/blob/master/markdown/pml-randomForestPerformance.md) helped to mitigate the first downside of a random forest model, that it can be slow. As to the interpretability, because the assignment focus was on applying the model to test data for accuracy, it seemed appropriate to focus on choosing a more accurate model at the expense of losing how easy it was to interpret the results.
+To help improve fit accuracy and reduce noise caused by having too many predictors from the 60 remaining variables, preprocessing with Principal Component Analysis was also done. To reduce overfitting to the training data, k-fold cross validation with 5 folds was used. To better estimate out-of-sample error, a validation set was held out on which to test the model. The code below shows the creation of the model using parallel processing and R's caret package.
+```{r create model, results='hide', message=FALSE}
+library(parallel)
+library(doParallel)
+inTrain <- createDataPartition(y=training$X, p = 0.8, list = FALSE)
+trainset <- training[inTrain,]
+validationset <- training[-inTrain,]
+cluster <- makeCluster(detectCores() - 1)
+registerDoParallel(cluster)
+fitControl <- trainControl(method = "cv", number = 5, allowParallel = TRUE)
+fit <- train(classe ~., method="rf", preProcess = "pca", data = trainset,
+             trControl = fitControl)
+stopCluster(cluster)
+registerDoSEQ()
+```
+## Results
+The resulting model's characteristics are given below:
+```{r display model, echo=FALSE}
+fit
+```
+Using the hold out set to test the model yields the following confusion matrix:
+```{r confusion matrix}
+validationresult <- predict(fit, validationset)
+confmat <- confusionMatrix(validationset$classe, validationresult)
+confmat$table
+confmat$overall[1]
+```
+The results show that the model chosen had predicted out-of-sample accuracy of 98.9% based on the validation set that had been held out of the original training data. The code below applied the model to the test data set given in the assignment.
+```{r remove blank and na values from test, results='hide'}
+testing <- testing %>% mutate_all(na_if,"")
+testing <- testing %>% select_if(~ !any(is.na(.)))
+predictions <- predict(fit, testing)
+```
+Those predicted values were entered into the project prediction quiz and received a score of 90%. It would seem prudent to question the out-of-sample error estimate of 98.9% a bit based on that result, although a larger test set would be needed to firmly revise the estimate down.
